@@ -8,7 +8,8 @@
   python3 scripts/build_chapter.py ../伊利亚特-冰与火之歌.md 1 "阿喀琉斯 I" "一" "" "阿喀琉斯 II（待更）"
 
 说明:
-  - 章节在 md 中以 "## 第N章" 开头，到下一个 "---" 结束；
+  - 章节在 md 中以 "## 第N章" 开头，到下一个 "## " 标题、编辑注记行（* 开头）或文末结束；
+  - 章节内部的 --- 与 * * * 都视为场景分隔符，渲染为居中分隔；
   - 以 * 开头的行（编辑注记）不进入正文；
   - 上一章名为空则上一章导航不输出；下一章名含"待更"则以纯文本呈现。
 """
@@ -61,8 +62,10 @@ def cn_num(n: int) -> str:
 
 
 def extract_chapter(md_text: str, num: int):
+    # 章节从 "## 第N章" 开始，到下一个 "## " 标题、编辑注记行（* 开头）或文末结束；
+    # 章节内部的 --- 与 * * * 均视为场景分隔符。
     pat = re.compile(
-        r"^## 第" + cn_num(num) + r"章[^\n]*\n(.*?)(?=^---$|\Z)", re.M | re.S
+        r"^## 第" + cn_num(num) + r"章[^\n]*\n(.*?)(?=^## |\n\*[^\n]*$|\Z)", re.M | re.S
     )
     m = pat.search(md_text)
     if not m:
@@ -72,12 +75,17 @@ def extract_chapter(md_text: str, num: int):
         line = line.strip()
         if not line or line.startswith(("#", ">")):
             continue
-        if line == "* * *":  # 场景分隔符，保留为场景间隔
+        if line in ("---", "* * *"):  # 场景分隔符，保留为场景间隔
             paras.append('<div class="scene-break">* * *</div>')
             continue
         if line.startswith("*"):  # 编辑注记不进入正文
             continue
         paras.append(f"<p>{line}</p>")
+    # 去掉首尾多余的场景分隔
+    while paras and paras[0].startswith('<div class="scene-break"'):
+        paras.pop(0)
+    while paras and paras[-1].startswith('<div class="scene-break"'):
+        paras.pop()
     return paras
 
 
