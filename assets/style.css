@@ -170,6 +170,15 @@ a.toc-item:hover { background: var(--badge-bg); }
   color: var(--accent);
 }
 
+.scene-break {
+  margin: 2.2em 0;
+  text-align: center;
+  letter-spacing: 0.6em;
+  text-indent: 0.6em;
+  color: var(--ink-soft);
+  user-select: none;
+}
+
 .chapter-nav {
   display: flex;
   justify-content: space-between;

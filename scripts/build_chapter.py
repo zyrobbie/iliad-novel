@@ -70,9 +70,14 @@ def extract_chapter(md_text: str, num: int):
     paras = []
     for line in m.group(1).strip().splitlines():
         line = line.strip()
-        if not line or line.startswith(("#", ">", "*")):
+        if not line or line.startswith(("#", ">")):
             continue
-        paras.append(line)
+        if line == "* * *":  # 场景分隔符，保留为场景间隔
+            paras.append('<div class="scene-break">* * *</div>')
+            continue
+        if line.startswith("*"):  # 编辑注记不进入正文
+            continue
+        paras.append(f"<p>{line}</p>")
     return paras
 
 
@@ -82,7 +87,7 @@ def main():
     next_name = sys.argv[6] if len(sys.argv) > 6 else ""
 
     paras = extract_chapter(Path(md_path).read_text(encoding="utf-8"), num)
-    body = "\n".join(f"    <p>{p}</p>" for p in paras)
+    body = "\n".join(f"    {p}" for p in paras)
 
     nav = []
     if prev_name:
@@ -93,7 +98,7 @@ def main():
         else:
             nav.append(f'    <a class="next" href="ch{num + 1:02d}.html">{next_name} &rarr;</a>')
 
-    desc = paras[0][:60] + "……" if paras else ""
+    desc = re.sub(r"<[^>]+>", "", paras[0])[:60] + "……" if paras else ""
     html = TEMPLATE.format(num=num, title=title, vol=vol, desc=desc, body=body, nav="\n".join(nav))
 
     out = Path(__file__).resolve().parent.parent / "chapters" / f"ch{num:02d}.html"
